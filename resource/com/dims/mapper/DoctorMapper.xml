@@ -1,0 +1,150 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<!-- namespace 用来找唯一的 Mapper 文件，一般是 domain 的全路径名 + Mapper -->
+<mapper namespace="com.dims.mapper.DoctorMapper">
+	<!-- 登录 -->
+	<select id="login" parameterType="User" resultType="Doctor">
+		SELECT Dno, Dname, Dsex, Dage, Dpwd
+		FROM Doctor
+		WHERE Dno = #{no} AND Dpwd = #{pwd};
+	</select>
+	
+	<!-- 统计未处理处方数目 -->
+	<select id="countUnsolvedRxs" resultType="int">
+		SELECT COUNT(*)
+		FROM Prescription p
+		WHERE p.Pstate = 0;
+	</select>
+	
+	<!-- 统计已处理处方数目 -->
+	<select id="countSolvedRxs" resultType="int">
+		SELECT COUNT(*)
+		FROM Prescription p
+		WHERE p.Pstate = 1;
+	</select>
+	
+	<!-- 统计由该名医生开出的处方数目 -->
+	<select id="countMyPrescribeRxs" parameterType="Doctor" resultType="int">
+		SELECT COUNT(*)
+		FROM Prescription p
+		WHERE p.Dno = #{Dno};
+	</select>
+	
+	<!-- 查看药品库存列表 -->
+	<select id="queryAllDrugs" resultType="Drug">
+		SELECT *
+		FROM DrugDoctorView
+		ORDER BY PDname;
+	</select>
+	
+	<!-- 查看医生列表 -->
+	<select id="queryAllDoctors" resultType="Doctor">
+		SELECT *
+		FROM Doctor
+		ORDER BY Dno;
+	</select>
+	
+	<!-- 查看未处理处方列表 -->
+	<select id="queryAllUnsolvedRxs" resultType="Prescription">
+		SELECT *
+		FROM Prescription
+		WHERE Pstate = 0
+		ORDER BY Ptime DESC;
+	</select>
+	
+	<!-- 查看已处理处方列表 -->
+	<select id="queryAllSolvedRxs" resultType="Prescription">
+		SELECT *
+		FROM Prescription
+		WHERE Pstate = 1
+		ORDER BY Htime DESC;
+	</select>
+	
+	<!-- 查看某一处方的具体明细 -->
+	<select id="queryOneRx" parameterType="Prescription" resultType="Prescription">
+		SELECT p.Pno, p.Pid, p.Dno, p.Ptime, p.Nno, p.Htime, p.Pstate
+		FROM Prescription p
+		WHERE p.Pno = #{Pno};
+	</select>
+	
+	<!-- 查看某一处方包含的所有药品 -->
+	<select id="queryAllContainedDrugs" parameterType="Prescription" resultType="Drug">
+		SELECT PID.PDno, PID.PDnum, d.PDname
+		FROM Prescription p, PID, Drug d
+		WHERE p.Pno = PID.Pno AND PID.PDno = d.PDno AND p.Pno = #{Pno};
+	</select>
+	
+	<!-- 新增一条处方记录 -->
+	<insert id="addNewRx" parameterType="Prescription" useGeneratedKeys="true" keyProperty="Pno">
+		INSERT INTO Prescription(Pid, Dno, Ptime, Nno, Htime, Pstate)
+		VALUES(#{Pid}, #{Dno}, #{Ptime}, null, null, 0);
+	</insert>
+	
+	<!-- 修改一条处方记录 -->
+	<update id="editRx" parameterType="Prescription">
+		UPDATE Prescription
+		SET Pid = #{Pid}, Dno = #{Dno}, Ptime = #{Ptime}
+		WHERE Pno = #{Pno};
+	</update>
+	
+	<!-- 查询某一药品的总库存数量 -->
+	<select id="queryOneDrugNum" parameterType="Drug" resultType="int">
+		SELECT PDnum
+		FROM DrugDoctorView
+		WHERE PDno = #{PDno};
+	</select>
+	
+	<!-- 查询某一处方的某一药品，用来判断该处方是否已经存在该药品 -->
+	<select id="queryRxDrug" resultType="int">
+		SELECT COUNT(*)
+		FROM PID
+		WHERE Pno = #{arg0.Pno} AND PDno = #{arg1.PDno};
+	</select>
+	
+	<!-- 为某一处方添加一种药品 -->
+	<select id="addNewRxDrug">
+		INSERT INTO PID(Pno, PDno, PDnum)
+		VALUES(#{arg0.Pno}, #{arg1.PDno}, #{arg1.PDnum});
+	</select>
+	
+	<!-- 修改某一处方的某一药品 -->
+	<update id="editRxDrug">
+		UPDATE PID
+		SET PDnum = #{arg1.PDnum}
+		WHERE Pno = #{arg0.Pno} AND PDno = #{arg1.PDno};
+	</update>
+	
+	<!-- 删除某一处方 -->
+	<delete id="deleteRx" parameterType="Prescription">
+		DELETE FROM Prescription
+		WHERE Pno = #{Pno};
+	</delete>
+	
+	<!-- 删除某一处方的某一药品 -->
+	<delete id="deleteRxDrug">
+		DELETE FROM PID
+		WHERE Pno = #{arg0.Pno} AND PDno = #{arg1.PDno};
+	</delete>
+	
+	<!-- 查询某一医生的所有信息 -->
+	<select id="queryOneDoctor" parameterType="Doctor" resultType="Doctor">
+		SELECT *
+		FROM Doctor
+		WHERE Dno = #{Dno};
+	</select>
+	
+	<!-- 查询某一医生开出的所有处方 -->
+	<select id="querySpecificDoctorRxs" parameterType="Doctor" resultType="Prescription">
+		SELECT *
+		FROM Prescription
+		WHERE Dno = #{Dno}
+		ORDER BY Ptime DESC;
+	</select>
+	
+	<!-- 修改登陆密码 -->
+	<update id="changeDpwd">
+		UPDATE Doctor
+		SET Dpwd = #{arg0}
+		WHERE Dno = #{arg1};
+	</update>
+</mapper>

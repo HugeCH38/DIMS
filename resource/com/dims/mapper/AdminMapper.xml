@@ -1,0 +1,213 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<!-- namespace 用来找唯一的 Mapper 文件，一般是 domain 的全路径名 + Mapper -->
+<mapper namespace="com.dims.mapper.AdminMapper">
+	<!-- 登录 -->
+	<select id="login" parameterType="User" resultType="Admin">
+		SELECT Ano, Aname, Asex, Aage, Apwd
+		FROM Admin
+		WHERE Ano = #{no} AND Apwd = #{pwd};
+	</select>
+	
+	<!-- 统计量少的库存药品种数 -->
+	<select id="countLowInventoryDrugs" resultType="int">
+		SELECT COUNT(*)
+		FROM DrugView
+		WHERE PDnum <![CDATA[ <= ]]> 50;
+	</select>
+	
+	<!-- 统计临期库存药品批数 -->
+	<select id="countClose2ExpiryPDbatches" resultType="int">
+		SELECT COUNT(*)
+		FROM InventoryDrugView
+		WHERE Rdays <![CDATA[ <= ]]> (PDlife / 10);
+	</select>
+	
+	<!-- 统计库存药品种数 -->
+	<select id="countInventoryDrugs" resultType="int">
+		SELECT COUNT(*)
+		FROM DrugView;
+	</select>
+	
+	<!-- 统计库存药品批数 -->
+	<select id="countInventoryPDbatches" resultType="int">
+		SELECT COUNT(*)
+		FROM InventoryDrugView;
+	</select>
+	
+	<!-- 统计销毁药品批数 -->
+	<select id="countDestroyedPDbatches" resultType="int">
+		SELECT COUNT(*)
+		FROM DestroyedDrugView;
+	</select>
+	
+	<!-- 统计由该名库存管理员入库的库存药品批数 -->
+	<select id="countMyInventoryPDbatches" parameterType="Admin" resultType="int">
+		SELECT COUNT(*)
+		FROM InventoryDrugView
+		WHERE SAno = #{Ano};
+	</select>
+	
+	<!-- 统计由该名库存管理员入库的药品总批数 -->
+	<select id="countMyPDbatches" parameterType="Admin" resultType="int">
+		SELECT COUNT(*)
+		FROM AllPDbatchView
+		WHERE SAno = #{Ano};
+	</select>
+	
+	<!-- 统计由该名库存管理员销毁 (出库) 的销毁药品批数 -->
+	<select id="countMyDestoryedPDbatches" parameterType="Admin" resultType="int">
+		SELECT COUNT(*)
+		FROM DestroyedDrugView
+		WHERE DAno = #{Ano};
+	</select>
+	
+	<!-- 查看药品库存列表 -->
+	<select id="queryAllDrugs" resultType="Drug">
+		SELECT *
+		FROM DrugView
+		ORDER BY PDname;
+	</select>
+	
+	<!-- 查看某一药品的所有信息 -->
+	<select id="queryOneDrug" parameterType="Drug" resultType="Drug">
+		SELECT *
+		FROM DrugView
+		WHERE PDno = #{PDno};
+	</select>
+	
+	<!-- 查看某一药品的所有批次 (包括库存批次和已销毁批次) -->
+	<select id="querySpecificPDbatches" parameterType="Drug" resultType="DestroyedDrug">
+		SELECT *
+		FROM AllPDbatchView
+		WHERE PDno = #{PDno}
+		ORDER BY PDbatch DESC;
+	</select>
+	
+	<!-- 查看某一供应商提供的所有批次 (包括库存批次和已销毁批次) -->
+	<select id="querySpecificSupplierPDbatches" parameterType="Supplier" resultType="DestroyedDrug">
+		SELECT *
+		FROM AllPDbatchView
+		WHERE Sno = #{Sno}
+		ORDER BY PDbatch DESC;
+	</select>
+	
+	<!-- 查看某一库存管理员负责的所有批次 (包括库存批次和已销毁批次、包括入库和出库) -->
+	<select id="querySpecificAdminPDbatches" parameterType="Admin" resultType="DestroyedDrug">
+		SELECT *
+		FROM AllPDbatchView
+		WHERE SAno = #{Ano} OR DAno = #{Ano}
+		ORDER BY PDbatch DESC;
+	</select>
+	
+	<!-- 查看某一药品的所有库存批次 -->
+	<select id="querySpecificInventoryPDbatches" parameterType="Drug" resultType="InventoryDrug">
+		SELECT *
+		FROM InventoryDrugView
+		WHERE PDno = #{PDno};
+	</select>
+	
+	<!-- 查看某一药品批次的所有信息 -->
+	<select id="queryOnePDbatch" parameterType="InventoryDrug" resultType="InventoryDrug">
+		SELECT *
+		FROM InventoryDrugView
+		WHERE PDno = #{PDno} AND PDbatch = #{PDbatch};
+	</select>
+	
+	<!-- 查看已销毁药品批次列表 -->
+	<select id="queryAllDestroyedPDbatches" resultType="DestroyedDrug">
+		SELECT *
+		FROM DestroyedDrugView;
+	</select>
+	
+	<!-- 参看某一药品的所有已销毁批次 -->
+	<select id="querySpecificDestroyedPDbatches" parameterType="Drug" resultType="DestroyedDrug">
+		SELECT *
+		FROM DestroyedDrugView
+		WHERE PDno = #{PDno};
+	</select>
+	
+	<!-- 查看量少的库存药品列表 -->
+	<select id="queryLowInventoryDrugs" resultType="Drug">
+		SELECT *
+		FROM DrugView
+		WHERE PDnum <![CDATA[ <= ]]> 50
+		ORDER BY PDnum;
+	</select>
+	
+	<!-- 查看临期库存药品列表 -->
+	<select id="queryClose2ExpiryPDbatches" resultType="InventoryDrug">
+		SELECT *
+		FROM InventoryDrugView
+		WHERE Rdays <![CDATA[ <= ]]> (PDlife / 10)
+		ORDER BY Rdays ASC;
+	</select>
+	
+	<!-- 查看药品供应商列表 -->
+	<select id="queryAllSuppliers" resultType="Supplier">
+		SELECT *
+		FROM Supplier
+		ORDER BY Sname;
+	</select>
+	
+	<!-- 查看某一药品供应商的所有信息 -->
+	<select id="queryOneSupplier" parameterType="Supplier" resultType="Supplier">
+		SELECT *
+		FROM Supplier
+		WHERE Sno = #{Sno};
+	</select>
+	
+	<!-- 添加一条供应商信息记录 -->
+	<insert id="addNewSupplier" parameterType="Supplier">
+		INSERT INTO Supplier(Sno, Sname, Saddr, Sphone)
+		VALUES(#{Sno}, #{Sname}, #{Saddr}, #{Sphone});
+	</insert>
+	
+	<!-- 修改一条供应商信息记录 -->
+	<update id="editSupplier" parameterType="Supplier">
+		UPDATE Supplier
+		SET Sname = #{Sname}, Saddr = #{Saddr}, Sphone = #{Sphone}
+		WHERE Sno = #{Sno};
+	</update>
+	
+	<!-- 查看库存管理员列表 -->
+	<select id="queryAllAdmins" resultType="Admin">
+		SELECT *
+		FROM Admin;
+	</select>
+	
+	<!-- 查看某一库存管理员的所有信息 -->
+	<select id="queryOneAdmin" parameterType="Admin" resultType="Admin">
+		SELECT *
+		FROM Admin
+		WHERE Ano = #{Ano};
+	</select>
+	
+	<!-- 药品入库 / 添加一条库存药品记录 -->
+	<insert id="addNewPDbatch" parameterType="InventoryDrug">
+		INSERT INTO InventoryDrug(PDno, PDbatch, PDnum, Sno, SAno, Stime)
+		VALUES(#{PDno}, #{PDbatch}, #{PDnum}, #{Sno}, #{SAno}, #{Stime});
+	</insert>
+	
+	<!-- 修改一条库存药品记录 -->
+	<update id="editPDbatch" parameterType="InventoryDrug">
+		UPDATE InventoryDrug
+		SET PDnum = #{PDnum}, Sno = #{Sno}, SAno = #{SAno}, Stime = #{Stime}
+		WHERE PDno = #{PDno} AND PDbatch = #{PDbatch};
+	</update>
+	
+	<!-- 销毁一批库存药品批次 -->
+	<select id="destroyPDbatch" parameterType="DestroyedDrug" resultType="int" statementType="CALLABLE" useCache="false">
+		DECLARE @returnValue SMALLINT;
+		EXEC DestroyInventoryDrug @PDno = #{PDno}, @PDbatch = #{PDbatch},
+									@DAno = #{DAno}, @Dtime = #{Dtime}, @returnValue = @returnValue OUTPUT;
+		SELECT @returnValue;
+	</select>
+	
+	<!-- 修改登陆密码 -->
+	<update id="changeApwd">
+		UPDATE Admin
+		SET Apwd = #{arg0}
+		WHERE Ano = #{arg1};
+	</update>
+</mapper>

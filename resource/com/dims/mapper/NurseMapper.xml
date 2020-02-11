@@ -1,0 +1,105 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<!-- namespace 用来找唯一的 Mapper 文件，一般是 domain 的全路径名 + Mapper -->
+<mapper namespace="com.dims.mapper.NurseMapper">
+	<!-- 登录 -->
+	<select id="login" parameterType="User" resultType="Nurse">
+		SELECT Nno, Nname, Nsex, Nage, Npwd
+		FROM Nurse
+		WHERE Nno = #{no} AND Npwd = #{pwd};
+	</select>
+	
+	<!-- 统计未处理处方数目 -->
+	<select id="countUnsolvedRxs" resultType="int">
+		SELECT COUNT(*)
+		FROM Prescription p
+		WHERE p.Pstate = 0;
+	</select>
+	
+	<!-- 统计已处理处方数目 -->
+	<select id="countSolvedRxs" resultType="int">
+		SELECT COUNT(*)
+		FROM Prescription p
+		WHERE p.Pstate = 1;
+	</select>
+	
+	<!-- 统计由该名护士处理的处方数目 -->
+	<select id="countMySolvedRxs" parameterType="Nurse" resultType="int">
+		SELECT COUNT(*)
+		FROM Prescription p
+		WHERE p.Pstate = 1 AND p.Nno = #{Nno};
+	</select>
+	
+	<!-- 查看药品库存列表 -->
+	<select id="queryAllDrugs" resultType="Drug">
+		SELECT *
+		FROM DrugView
+		ORDER BY PDname;
+	</select>
+	
+	<!-- 查看未处理处方列表 -->
+	<select id="queryAllUnsolvedRxs" resultType="Prescription">
+		SELECT *
+		FROM Prescription
+		WHERE Pstate = 0
+		ORDER BY Ptime DESC;
+	</select>
+	
+	<!-- 查看已处理处方列表 -->
+	<select id="queryAllSolvedRxs" resultType="Prescription">
+		SELECT *
+		FROM Prescription
+		WHERE Pstate = 1
+		ORDER BY Htime DESC;
+	</select>
+	
+	<!-- 查看某一处方的具体明细 -->
+	<select id="queryOneRx" parameterType="Prescription" resultType="Prescription">
+		SELECT p.Pno, p.Pid, p.Dno, p.Ptime, p.Nno, p.Htime, p.Pstate
+		FROM Prescription p
+		WHERE p.Pno = #{Pno};
+	</select>
+	
+	<!-- 查看某一处方包含的所有药品 -->
+	<select id="queryAllContainedDrugs" parameterType="Prescription" resultType="Drug">
+		SELECT PID.PDno, PID.PDnum, d.PDname
+		FROM Prescription p, PID, Drug d
+		WHERE p.Pno = PID.Pno AND PID.PDno = d.PDno AND p.Pno = #{Pno};
+	</select>
+	
+	<!-- 查看护士列表 -->
+	<select id="queryAllNurses" resultType="Nurse">
+		SELECT *
+		FROM Nurse
+		ORDER BY Nno;
+	</select>
+	
+	<!-- 查询某一护士的所有信息 -->
+	<select id="queryOneNurse" parameterType="Nurse" resultType="Nurse">
+		SELECT *
+		FROM Nurse
+		WHERE Nno = #{Nno};
+	</select>
+	
+	<!-- 查询某一护士处理的所有处方 -->
+	<select id="querySpecificNurseRxs" parameterType="Nurse" resultType="Prescription">
+		SELECT *
+		FROM Prescription
+		WHERE Nno = #{Nno}
+		ORDER BY Htime DESC;
+	</select>
+	
+	<!-- 处理一个处方 -->
+	<select id="handleRx" parameterType="Prescription" resultType="int" statementType="CALLABLE" useCache="false">
+		DECLARE @returnValue SMALLINT;
+		EXEC HandleRx @Pno = #{Pno}, @Nno = #{Nno}, @Htime = #{Htime}, @returnValue = @returnValue OUTPUT;
+		SELECT @returnValue;
+	</select>
+	
+	<!-- 修改登陆密码 -->
+	<update id="changeNpwd">
+		UPDATE Nurse
+		SET Npwd = #{arg0}
+		WHERE Nno = #{arg1};
+	</update>
+</mapper>
